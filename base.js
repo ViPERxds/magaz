@@ -21,45 +21,25 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Telegram WebApp не доступен');
     }
 
-    // Получаем данные из localStorage (сохраненные на предыдущих страницах)
-    const productData = getProductData();
-    const requirementsData = getRequirementsData();
-    const tzData = getTzData(); 
-    const storeData = getStoreData();
-
-    // Отладочный вывод данных о магазине
-    console.log('Данные о магазине из localStorage:', storeData);
-    console.log('Данные о требованиях из localStorage:', requirementsData);
+    // Получаем данные из localStorage
+    const productData = JSON.parse(localStorage.getItem('productData') || '{}');
+    console.log('Загруженные данные о товаре:', productData);
 
     // Заполняем название товара
     if (productData && productData.name) {
         document.getElementById('productName').innerHTML = formatProductName(productData.name);
     }
 
-    // Заполняем изображения товара
+    // Заполняем изображение товара
     if (productData && productData.allImages && productData.allImages.length > 0) {
         console.log('Найдены изображения товара:', productData.allImages);
-        
-        // Находим контейнер для изображения товара
-        const productImageContainer = document.querySelector('.product-image');
-        if (productImageContainer) {
-            // Создаем элемент изображения если его нет
-            let productImage = document.getElementById('productImage');
-            if (!productImage) {
-                productImage = document.createElement('img');
-                productImage.id = 'productImage';
-                productImageContainer.appendChild(productImage);
-            }
-            
-            // Устанавливаем изображение
-            productImage.src = productData.allImages[0];
-            productImage.alt = productData.name || 'Товар';
-            console.log('Установлено изображение товара:', productImage.src);
+        const img = document.querySelector('img[alt="Фото товара"]');
+        if (img) {
+            img.src = productData.allImages[0];
+            console.log('Установлено изображение товара:', img.src);
         } else {
-            console.error('Не найден контейнер для изображения товара');
+            console.error('Не найден элемент изображения товара');
         }
-    } else {
-        console.log('Изображения товара не найдены в данных');
     }
 
     // Заполняем цены
@@ -80,9 +60,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (bonusDetails && bonusCondition) {
         // Проверяем, есть ли данные о доплате
-        if (requirementsData && requirementsData.bonusAmount && requirementsData.bonusCondition) {
+        if (productData && productData.requirements && productData.requirements.bonusAmount && productData.requirements.bonusCondition) {
             bonusDetails.innerHTML = '<span class="condition-label">Доплата</span>' + 
-                requirementsData.bonusAmount + '₽, при условии: ' + requirementsData.bonusCondition;
+                productData.requirements.bonusAmount + '₽, при условии: ' + productData.requirements.bonusCondition;
         } else {
             // Если выбрано "Нет" для доплаты, показываем "Нет"
             bonusDetails.innerHTML = '<span class="condition-label">Доплата</span>Нет';
@@ -92,16 +72,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Заполняем данные о магазине
-    if (storeData) {
-        console.log('Данные о магазине:', storeData);
+    if (productData) {
+        console.log('Данные о магазине:', productData);
         
         // Заполняем аватар магазина
         const storeAvatar = document.querySelector('.shop-avatar img');
         if (storeAvatar) {
-            if (storeData.logoUrl) {
-                console.log('Устанавливаем логотип магазина:', storeData.logoUrl);
-                storeAvatar.src = storeData.logoUrl;
-                storeAvatar.alt = storeData.name || 'Аватар магазина';
+            if (productData.logoUrl) {
+                console.log('Устанавливаем логотип магазина:', productData.logoUrl);
+                storeAvatar.src = productData.logoUrl;
+                storeAvatar.alt = productData.name || 'Аватар магазина';
             } else {
                 console.log('Используем дефолтный логотип магазина');
                 storeAvatar.src = 'images/default-shop-avatar.png';
@@ -113,49 +93,30 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Заполняем требования к соцсетям
-    if (requirementsData && requirementsData.socialRequirements) {
-        updateSocialRequirements(requirementsData.socialRequirements);
+    if (productData && productData.requirements && productData.requirements.socialRequirements) {
+        updateSocialRequirements(productData.requirements.socialRequirements);
     }
 
     // Заполняем данные о вознаграждении
-    if (requirementsData && requirementsData.rewardPrice) {
-        document.getElementById('rewardPrice').textContent = requirementsData.rewardPrice + ' ₽';
-    }
-
-    // Заполняем данные о доплате
-    if (requirementsData) {
-        const bonusDetails = document.getElementById('bonusDetails');
-        if (bonusDetails) {
-            if (requirementsData.bonusAmount && requirementsData.bonusCondition) {
-                bonusDetails.innerHTML = '<span class="condition-label">Доплата</span>' + 
-                    requirementsData.bonusAmount + '₽, при условии: ' + requirementsData.bonusCondition;
-            } else {
-                // Если доплаты нет, показываем "Нет"
-                bonusDetails.innerHTML = '<span class="condition-label">Доплата</span>Нет';
-            }
-            // Всегда показываем блок с доплатой
-            const bonusCondition = document.querySelector('.bonus-condition');
-            if (bonusCondition) {
-                bonusCondition.style.display = 'block';
-            }
-        }
+    if (productData && productData.requirements && productData.requirements.rewardPrice) {
+        document.getElementById('rewardPrice').textContent = productData.requirements.rewardPrice + ' ₽';
     }
 
     // Заполняем данные об условиях
-    if (requirementsData) {
-        if (requirementsData.keyPurchase) {
-            document.getElementById('keyPurchase').textContent = requirementsData.keyPurchase;
+    if (productData && productData.requirements) {
+        if (productData.requirements.keyPurchase) {
+            document.getElementById('keyPurchase').textContent = productData.requirements.keyPurchase;
         }
-        if (requirementsData.returnPolicy) {
-            document.getElementById('returnPolicy').textContent = requirementsData.returnPolicy;
+        if (productData.requirements.returnPolicy) {
+            document.getElementById('returnPolicy').textContent = productData.requirements.returnPolicy;
         }
-        if (requirementsData.paymentType) {
-            document.getElementById('paymentType').textContent = requirementsData.paymentType;
+        if (productData.requirements.paymentType) {
+            document.getElementById('paymentType').textContent = productData.requirements.paymentType;
         }
-        if (requirementsData.reviewType) {
+        if (productData.requirements.reviewType) {
             const reviewType = document.getElementById('reviewType');
             if (reviewType) {
-                reviewType.textContent = requirementsData.reviewType;
+                reviewType.textContent = productData.requirements.reviewType;
             }
         }
     }
@@ -219,45 +180,86 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Скрываем отображение разрешения изображения
-    const imageSize = document.querySelector('.image-size');
-    if (imageSize) {
-        imageSize.style.display = 'none';
-    }
+    // Удаляем ненужные элементы
+    const elementsToRemove = [
+        '.shop-rating',
+        '.offers-count',
+        '.views-stats',
+        '.image-size'
+    ];
 
-    // Скрываем блок статистики просмотров полностью
-    const viewsStats = document.querySelector('.views-stats');
-    if (viewsStats) {
-        viewsStats.style.display = 'none';
-    }
+    elementsToRemove.forEach(selector => {
+        const element = document.querySelector(selector);
+        if (element) {
+            element.remove();
+        }
+    });
 
     // Настраиваем вкладки соцсетей
     setupSocialTabs();
 
     // Обработчик для кнопки "Отправить заявку"
-    const submitBtn = document.querySelector('.submit-btn');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', function(e) {
+    const submitButton = document.querySelector('.submit-btn, .publish-btn, button[type="submit"]');
+    if (submitButton) {
+        submitButton.addEventListener('click', function(e) {
             e.preventDefault();
             
             try {
+                // Получаем все необходимые данные
+                const productData = JSON.parse(localStorage.getItem('productData') || '{}');
+                const requirementsData = JSON.parse(localStorage.getItem('requirementsData') || '{}');
+                const tzData = JSON.parse(localStorage.getItem('tzData') || '{}');
+                const storeData = JSON.parse(localStorage.getItem('storeData') || '{}');
+
+                console.log('Данные перед отправкой:', {
+                    productData,
+                    requirementsData,
+                    tzData,
+                    storeData
+                });
+
                 const requestData = {
-                    product: getProductData(),
-                    requirements: getRequirementsData(),
-                    tz: getTzData(),
-                    store: getStoreData(),
-                    images: getImages()
+                    product: {
+                        name: productData.name || '',
+                        price: productData.price || '',
+                        link: productData.link || '',
+                        images: productData.allImages || []
+                    },
+                    requirements: {
+                        rewardPrice: requirementsData.rewardPrice || '',
+                        socialRequirements: requirementsData.socialRequirements || {},
+                        keyPurchase: requirementsData.keyPurchase || '',
+                        returnPolicy: requirementsData.returnPolicy || '',
+                        paymentType: requirementsData.paymentType || '',
+                        reviewType: requirementsData.reviewType || ''
+                    },
+                    tz: {
+                        contentRequirements: tzData.contentRequirements || ''
+                    },
+                    store: {
+                        name: storeData.name || '',
+                        description: storeData.description || '',
+                        logoUrl: storeData.logoUrl || ''
+                    }
                 };
 
-                console.log('Отправка данных в бота:', requestData);
+                console.log('Подготовленные данные для отправки:', requestData);
+
+                if (!requestData.product.name || !requestData.product.price) {
+                    throw new Error('Не заполнены обязательные поля товара');
+                }
+
                 window.Telegram.WebApp.sendData(JSON.stringify(requestData));
+                console.log('Данные успешно отправлены');
                 window.Telegram.WebApp.close();
 
             } catch (error) {
                 console.error('Ошибка при отправке данных:', error);
-                alert('Произошла ошибка при отправке данных. Пожалуйста, попробуйте еще раз.');
+                alert('Ошибка: ' + error.message);
             }
         });
+    } else {
+        console.error('Кнопка отправки не найдена');
     }
 
     // Обработчик для кнопки "Редактировать"
