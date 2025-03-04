@@ -120,76 +120,141 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Получение элементов вкладок и их содержимого
+    // Обработчики для табов
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
 
-    // Функция переключения вкладок
-    function switchTab(tabId) {
-        // Удаляем активный класс у всех вкладок и их содержимого
-        tabs.forEach(tab => tab.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
-        
-        // Добавляем активный класс выбранной вкладке
-        const selectedTab = document.getElementById(tabId);
-        if (selectedTab) {
-            selectedTab.classList.add('active');
-        }
-        
-        // Добавляем активный класс соответствующему содержимому
-        const selectedContent = document.getElementById(tabId + '-content');
-        if (selectedContent) {
-            selectedContent.classList.add('active');
-        }
-        
-        // Сохраняем активную вкладку в localStorage
-        localStorage.setItem('activeTab', tabId);
-    }
-
-    // Обработчики событий для вкладок
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            switchTab(tab.id);
+            // Удаляем активный класс у всех табов
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Добавляем активный класс выбранному табу
+            tab.classList.add('active');
+            const contentId = tab.id + '-content';
+            document.getElementById(contentId).classList.add('active');
+
+            // Обновляем содержимое вкладки
+            updateTabContent(tab.id);
         });
     });
 
-    // Проверяем, есть ли сохраненная активная вкладка
-    const savedTab = localStorage.getItem('activeTab');
-    if (savedTab) {
-        switchTab(savedTab);
-    } else {
-        // По умолчанию открываем вкладку "Модерации"
-        switchTab('tab-moderation');
+    // Функция для обновления содержимого вкладки
+    function updateTabContent(tabId) {
+        const content = document.getElementById(tabId + '-content');
+        const orders = getOrders();
+
+        // Очищаем текущее содержимое
+        content.innerHTML = '';
+
+        if (orders.length === 0) {
+            // Показываем сообщение об отсутствии заявок
+            content.innerHTML = getEmptyMessage(tabId);
+            return;
+        }
+
+        // Фильтруем заявки по статусу
+        const filteredOrders = orders.filter(order => {
+            switch (tabId) {
+                case 'tab-active':
+                    return order.status === 'active';
+                case 'tab-moderation':
+                    return order.status === 'moderation';
+                case 'tab-hidden':
+                    return order.status === 'hidden';
+                default:
+                    return false;
+            }
+        });
+
+        if (filteredOrders.length === 0) {
+            content.innerHTML = getEmptyMessage(tabId);
+            return;
+        }
+
+        // Отображаем заявки
+        filteredOrders.forEach(order => {
+            content.appendChild(createOrderCard(order));
+        });
     }
 
-    // Функция обновления статуса заявок
-    function updateApplicationsStatus() {
-        // Получаем данные о заявках из localStorage или другого источника
-        const applications = JSON.parse(localStorage.getItem('applications')) || [];
-        
-        // Проверяем наличие активных заявок
-        const activeApps = applications.filter(app => app.status === 'active');
-        const activeContent = document.getElementById('tab-active-content');
-        if (activeApps.length > 0) {
-            activeContent.classList.add('has-data');
-            // Здесь можно добавить код для отображения активных заявок
-        } else {
-            activeContent.classList.remove('has-data');
-        }
-        
-        // Проверяем наличие скрытых заявок
-        const hiddenApps = applications.filter(app => app.status === 'hidden');
-        const hiddenContent = document.getElementById('tab-hidden-content');
-        if (hiddenApps.length > 0) {
-            hiddenContent.classList.add('has-data');
-            // Здесь можно добавить код для отображения скрытых заявок
-        } else {
-            hiddenContent.classList.remove('has-data');
+    // Функция для получения сообщения о пустой вкладке
+    function getEmptyMessage(tabId) {
+        switch (tabId) {
+            case 'tab-active':
+                return `
+                    <div class="active-info no-data-message">
+                        <h3>У вас нет активных заявок</h3>
+                        <p>Здесь будут отображаться ваши активные заявки после прохождения модерации</p>
+                    </div>`;
+            case 'tab-moderation':
+                return `
+                    <div class="moderation-info no-data-message">
+                        <h3>У вас нет заявок на модерации</h3>
+                        <p>Здесь будут отображаться ваши заявки, ожидающие проверки</p>
+                    </div>`;
+            case 'tab-hidden':
+                return `
+                    <div class="hidden-info no-data-message">
+                        <h3>У вас нет скрытых заявок</h3>
+                        <p>Здесь будут отображаться заявки, которые вы решили скрыть</p>
+                    </div>`;
+            default:
+                return '';
         }
     }
 
-    // Вызываем функцию обновления статуса при загрузке страницы
-    updateApplicationsStatus();
+    // Функция для создания карточки заявки
+    function createOrderCard(order) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <div class="product-content">
+                <a href="base.html" class="product-link">
+                    <div class="product-image-left">
+                        <img src="${order.image || 'assets/tz.jpg'}" alt="Фото товара">
+                    </div>
+                </a>
+                <div class="price-block">
+                    <div class="price purple">
+                        <div class="price-value">${order.reward || '800'} ₽</div>
+                        <div class="price-label">Выплата</div>
+                    </div>
+                    <div class="price gray">
+                        <div class="price-value">${order.price || '500'} ₽</div>
+                        <div class="price-label">Цена</div>
+                    </div>
+                </div>
+                <!-- Остальное содержимое карточки -->
+            </div>`;
+        return card;
+    }
+
+    // Функция для получения заявок из localStorage
+    function getOrders() {
+        try {
+            const orders = localStorage.getItem('orders');
+            return orders ? JSON.parse(orders) : [];
+        } catch (e) {
+            console.error('Ошибка при получении заявок:', e);
+            return [];
+        }
+    }
+
+    // Инициализация первой вкладки
+    const activeTab = document.querySelector('.tab.active');
+    if (activeTab) {
+        updateTabContent(activeTab.id);
+    }
+
+    // Обработчик для WebApp
+    if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.onEvent('mainButtonClicked', function() {
+            const orders = getOrders();
+            window.Telegram.WebApp.sendData(JSON.stringify(orders));
+        });
+    }
 
     // Функция для получения данных о товаре из localStorage
     function getProductData() {
@@ -255,4 +320,25 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-}); 
+});
+
+// Функция для обновления статуса заявки
+function updateOrderStatus(orderId, newStatus) {
+    try {
+        const orders = getOrders();
+        const orderIndex = orders.findIndex(order => order.id === orderId);
+        
+        if (orderIndex !== -1) {
+            orders[orderIndex].status = newStatus;
+            localStorage.setItem('orders', JSON.stringify(orders));
+            
+            // Обновляем отображение
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab) {
+                updateTabContent(activeTab.id);
+            }
+        }
+    } catch (e) {
+        console.error('Ошибка при обновлении статуса заявки:', e);
+    }
+} 
