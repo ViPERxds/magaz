@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
         card.innerHTML = `
             <div class="product-content">
                 <div class="product-image-left">
-                    <img src="${product.i ? product.i[0] : 'assets/tz.jpg'}" alt="Фото товара">
+                    <img src="${product.i ? product.i[0] : 'assets/tz.jpg'}" alt="Фото товара" onerror="this.src='assets/tz.jpg'">
                 </div>
                 
                 <div class="price-block">
@@ -191,9 +191,15 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const [platform, reqs] of Object.entries(socialRequirements)) {
             for (const [key, value] of Object.entries(reqs)) {
                 if (value) {
+                    const label = {
+                        'followers': 'Подписчики от',
+                        'reels': 'Reels от',
+                        'stories': 'Stories от'
+                    }[key] || key;
+                    
                     requirements += `
                         <div class="requirement-item">
-                            <span class="requirement-label">${key}:</span>
+                            <span class="requirement-label">${label}:</span>
                             <span class="requirement-value">${value}</span>
                         </div>
                     `;
@@ -211,17 +217,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Функция для загрузки активных заказов
     async function loadActiveOrders() {
         try {
-            // Получаем user_id из Telegram WebApp
             const userId = window.Telegram.WebApp.initDataUnsafe.user.id;
+            console.log('Загрузка активных заказов для пользователя:', userId);
             
-            // Загружаем активные заказы
             const response = await fetch(`/api/orders?user_id=${userId}&status=active`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const orders = await response.json();
+            console.log('Получены активные заказы:', orders);
 
-            // Очищаем контейнер
+            const activeOrdersContainer = document.getElementById('activeOrders');
             activeOrdersContainer.innerHTML = '';
 
-            if (orders.length === 0) {
+            if (!orders || orders.length === 0) {
                 activeOrdersContainer.innerHTML = `
                     <div class="active-info no-data-message">
                         <h3>У вас нет активных заявок</h3>
@@ -231,7 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Отображаем каждый заказ
             orders.forEach(order => {
                 const card = createOrderCard(order);
                 activeOrdersContainer.appendChild(card);
@@ -239,6 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Ошибка при загрузке активных заказов:', error);
+            const activeOrdersContainer = document.getElementById('activeOrders');
             activeOrdersContainer.innerHTML = `
                 <div class="error-message">
                     <h3>Произошла ошибка при загрузке заказов</h3>
