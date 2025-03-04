@@ -189,6 +189,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const publishBtn = document.querySelector('.publish-btn');
     if (publishBtn) {
         publishBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            try {
+                // Собираем все данные для отправки
+                const requestData = {
+                    productName: productData ? productData.name : '',
+                    price: productData ? productData.price : '',
+                    reward: requirementsData ? requirementsData.rewardPrice : '',
+                    productLink: productData ? productData.link : '',
+                    marketplaces: productData ? productData.marketplace : [],
+                    tz: tzData ? tzData.contentRequirements : '',
+                    requirements: requirementsData ? {
+                        pool: requirementsData.socialRequirements.instagram.pool,
+                        reels: requirementsData.socialRequirements.instagram.reels,
+                        stories: requirementsData.socialRequirements.instagram.stories
+                    } : {},
+                    images: productData ? productData.allImages : []
+                };
+
+                console.log('Отправляемые данные:', requestData);
+
+                // Отправляем данные через Telegram WebApp
+                if (window.Telegram && window.Telegram.WebApp) {
+                    // Закрываем WebApp после отправки данных
+                    window.Telegram.WebApp.sendData(JSON.stringify(requestData));
+                    window.Telegram.WebApp.close();
+                } else {
+                    console.error('Telegram WebApp не инициализирован');
+                }
+
+            } catch (error) {
+                console.error('Ошибка при отправке данных:', error);
+            }
+
             // Сохраняем флаг для показа уведомления
             localStorage.setItem('showModerationPopup', 'true');
             // Сохраняем время отправки
