@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработчик для кнопки "Отправить заявку"
     const submitButton = document.querySelector('.submit-btn, .publish-btn, button[type="submit"]');
     if (submitButton) {
-        submitButton.addEventListener('click', function(e) {
+        submitButton.addEventListener('click', async function(e) {
             e.preventDefault();
             
             try {
@@ -275,49 +275,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 const tzData = localStorage.getItem('tzContent') || '';
                 const storeData = JSON.parse(localStorage.getItem('storeData') || '{}');
 
-                console.log('Исходные данные:', {
-                    productData,
-                    requirementsData,
-                    tzData,
-                    storeData
-                });
-
-                // Формируем объект для отправки
+                // Формируем оптимизированный объект для отправки
                 const requestData = {
-                    product: {
-                        name: productData.name || '',
-                        price: productData.price || '',
-                        link: productData.link || '',
-                        images: productData.images || [] // Используем images вместо allImages
+                    p: { // product
+                        n: productData.name || '', // name
+                        p: productData.price || '', // price
+                        l: productData.link || '', // link
+                        i: productData.images ? productData.images.slice(0, 3) : [] // только первые 3 изображения
                     },
-                    requirements: {
-                        rewardPrice: requirementsData.rewardPrice || '',
-                        socialRequirements: requirementsData.socialRequirements || {},
-                        keyPurchase: requirementsData.keyPurchase || '',
-                        returnPolicy: requirementsData.returnPolicy || '',
-                        paymentType: requirementsData.paymentType || '',
-                        reviewType: requirementsData.reviewType || '',
-                        bonusAmount: requirementsData.bonusAmount || '',
-                        bonusCondition: requirementsData.bonusCondition || ''
+                    r: { // requirements
+                        rp: requirementsData.rewardPrice || '', // rewardPrice
+                        sr: requirementsData.socialRequirements || {}, // socialRequirements
+                        kp: requirementsData.keyPurchase || '', // keyPurchase
+                        rp: requirementsData.returnPolicy || '', // returnPolicy
+                        pt: requirementsData.paymentType || '', // paymentType
+                        rt: requirementsData.reviewType || '', // reviewType
+                        ba: requirementsData.bonusAmount || '', // bonusAmount
+                        bc: requirementsData.bonusCondition || '' // bonusCondition
                     },
-                    tz: tzData,
-                    store: {
-                        name: storeData.name || '',
-                        logo: storeData.logo || storeData.logoUrl || '', // Поддерживаем оба варианта
-                        description: storeData.description || ''
+                    t: tzData.substring(0, 1000), // Ограничиваем длину ТЗ
+                    s: { // store
+                        n: storeData.name || '', // name
+                        l: storeData.logo || storeData.logoUrl || '', // logo
+                        d: storeData.description ? storeData.description.substring(0, 200) : '' // description
                     }
                 };
 
                 // Проверяем обязательные поля
-                if (!requestData.product.name) throw new Error('Не указано название товара');
-                if (!requestData.product.price) throw new Error('Не указана цена товара');
-                if (!requestData.store.name) throw new Error('Не указано название магазина');
+                if (!requestData.p.n) throw new Error('Не указано название товара');
+                if (!requestData.p.p) throw new Error('Не указана цена товара');
+                if (!requestData.s.n) throw new Error('Не указано название магазина');
+
+                // Преобразуем в JSON и проверяем размер
+                const jsonData = JSON.stringify(requestData);
+                if (jsonData.length > 4096) {
+                    throw new Error('Данные слишком большие для отправки. Пожалуйста, уменьшите количество или размер изображений.');
+                }
 
                 console.log('Отправляемые данные:', requestData);
+                console.log('Размер данных:', jsonData.length, 'байт');
 
                 // Отправляем данные через Telegram WebApp
                 if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.sendData(JSON.stringify(requestData));
+                    window.Telegram.WebApp.sendData(jsonData);
                     console.log('Данные успешно отправлены через WebApp');
                 } else {
                     throw new Error('Telegram WebApp не доступен');
