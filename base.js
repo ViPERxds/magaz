@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Получаем данные из localStorage (сохраненные на предыдущих страницах)
     const productData = getProductData();
     const requirementsData = getRequirementsData();
-    const tzData = getTzData();
+    const tzData = getTzData(); 
     const storeData = getStoreData();
 
     // Отладочный вывод данных о магазине
@@ -33,7 +33,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Заполняем изображения товара
     if (productData) {
-        setupProductImages(productData);
+        const productImage = document.getElementById('productImage');
+        if (productImage && productData.allImages && productData.allImages.length > 0) {
+            productImage.src = productData.allImages[0];
+            productImage.alt = productData.name || 'Товар';
+            
+            // Если есть дополнительные изображения, создаем галерею
+            if (productData.allImages.length > 1) {
+                createImageGallery(productData.allImages);
+            }
+        }
     }
 
     // Заполняем цены
@@ -210,22 +219,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     images: getImages()
                 };
 
-                console.log('Подготовленные данные:', requestData);
-
-                // Настраиваем MainButton
-                const mainButton = window.Telegram.WebApp.MainButton;
-                mainButton.setText('ОТПРАВИТЬ ЗАЯВКУ');
-                mainButton.show();
-                
-                // Добавляем обработчик для MainButton
-                mainButton.onClick(function() {
-                    console.log('Отправка данных через MainButton');
-                    window.Telegram.WebApp.sendData(JSON.stringify(requestData));
-                });
+                console.log('Отправка данных:', requestData);
+                window.Telegram.WebApp.sendData(JSON.stringify(requestData));
 
             } catch (error) {
-                console.error('Ошибка при подготовке данных:', error);
-                alert('Произошла ошибка при подготовке данных. Пожалуйста, попробуйте еще раз.');
+                console.error('Ошибка при отправке данных:', error);
+                alert('Произошла ошибка при отправке данных. Пожалуйста, попробуйте еще раз.');
             }
         });
     }
@@ -495,14 +494,15 @@ function fillStoreData(storeData) {
     }
     
     // Заполняем аватар магазина
-    if (storeData.logoUrl) {
-        const storeAvatar = document.querySelector('.shop-avatar img');
-        if (storeAvatar) {
-            console.log('Найден элемент для аватара магазина, устанавливаем:', storeData.logoUrl);
+    const storeAvatar = document.querySelector('.shop-avatar img');
+    if (storeAvatar) {
+        if (storeData.logoUrl) {
             storeAvatar.src = storeData.logoUrl;
             storeAvatar.alt = storeData.name || 'Аватар магазина';
         } else {
-            console.log('Элемент для аватара магазина не найден');
+            // Если нет логотипа, используем дефолтное изображение
+            storeAvatar.src = 'images/default-shop-avatar.png';
+            storeAvatar.alt = 'Магазин';
         }
     }
     
