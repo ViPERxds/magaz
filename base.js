@@ -4,6 +4,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.Telegram && window.Telegram.WebApp) {
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
+
+        // Настраиваем тему и цвета
+        document.documentElement.style.setProperty('--tg-theme-bg-color', window.Telegram.WebApp.backgroundColor);
+        document.documentElement.style.setProperty('--tg-theme-text-color', window.Telegram.WebApp.textColor);
+        document.documentElement.style.setProperty('--tg-theme-button-color', window.Telegram.WebApp.buttonColor);
+        document.documentElement.style.setProperty('--tg-theme-button-text-color', window.Telegram.WebApp.buttonTextColor);
+
+        console.log('Telegram WebApp успешно инициализирован');
+    } else {
+        console.error('Telegram WebApp не доступен');
     }
 
     // Получаем данные из localStorage (сохраненные на предыдущих страницах)
@@ -192,41 +202,31 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             try {
-                // Собираем все данные для отправки
                 const requestData = {
-                    productName: productData ? productData.name : '',
-                    price: productData ? productData.price : '',
-                    reward: requirementsData ? requirementsData.rewardPrice : '',
-                    productLink: productData ? productData.link : '',
-                    marketplaces: productData ? productData.marketplace : [],
-                    tz: tzData ? tzData.contentRequirements : '',
-                    requirements: requirementsData ? {
-                        pool: requirementsData.socialRequirements.instagram.pool,
-                        reels: requirementsData.socialRequirements.instagram.reels,
-                        stories: requirementsData.socialRequirements.instagram.stories
-                    } : {},
-                    images: productData ? productData.allImages : []
+                    product: getProductData(),
+                    requirements: getRequirementsData(),
+                    tz: getTzData(),
+                    store: getStoreData(),
+                    images: getImages()
                 };
 
-                console.log('Отправляемые данные:', requestData);
+                console.log('Подготовленные данные:', requestData);
 
-                // Отправляем данные через Telegram WebApp
-                if (window.Telegram && window.Telegram.WebApp) {
-                    // Закрываем WebApp после отправки данных
+                // Настраиваем MainButton
+                const mainButton = window.Telegram.WebApp.MainButton;
+                mainButton.setText('ОТПРАВИТЬ ЗАЯВКУ');
+                mainButton.show();
+                
+                // Добавляем обработчик для MainButton
+                mainButton.onClick(function() {
+                    console.log('Отправка данных через MainButton');
                     window.Telegram.WebApp.sendData(JSON.stringify(requestData));
-                    window.Telegram.WebApp.close();
-                } else {
-                    console.error('Telegram WebApp не инициализирован');
-                }
+                });
 
             } catch (error) {
-                console.error('Ошибка при отправке данных:', error);
+                console.error('Ошибка при подготовке данных:', error);
+                alert('Произошла ошибка при подготовке данных. Пожалуйста, попробуйте еще раз.');
             }
-
-            // Сохраняем флаг для показа уведомления
-            localStorage.setItem('showModerationPopup', 'true');
-            // Сохраняем время отправки
-            localStorage.setItem('submissionTime', new Date().toISOString());
         });
     }
 
@@ -241,46 +241,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Функция получения данных о товаре
 function getProductData() {
-    try {
-        const productData = localStorage.getItem('productData');
-        return productData ? JSON.parse(productData) : null;
-    } catch (e) {
-        console.error('Ошибка при получении данных о товаре:', e);
-        return null;
-    }
+    const productData = JSON.parse(localStorage.getItem('productData') || '{}');
+    return {
+        name: productData.name || '',
+        price: productData.price || '',
+        link: productData.link || '',
+        marketplace: productData.marketplace || [],
+        images: productData.allImages || []
+    };
 }
 
 // Функция получения данных о требованиях
 function getRequirementsData() {
-    try {
-        const requirementsData = localStorage.getItem('requirementsData');
-        return requirementsData ? JSON.parse(requirementsData) : null;
-    } catch (e) {
-        console.error('Ошибка при получении данных о требованиях:', e);
-        return null;
-    }
+    const requirementsData = JSON.parse(localStorage.getItem('requirementsData') || '{}');
+    return {
+        rewardPrice: requirementsData.rewardPrice || '',
+        socialRequirements: requirementsData.socialRequirements || {
+            instagram: {
+                pool: false,
+                reels: false,
+                stories: false
+            }
+        }
+    };
 }
 
 // Функция получения данных о ТЗ
 function getTzData() {
-    try {
-        const tzData = localStorage.getItem('tzData');
-        return tzData ? JSON.parse(tzData) : null;
-    } catch (e) {
-        console.error('Ошибка при получении данных о ТЗ:', e);
-        return null;
-    }
+    const tzData = JSON.parse(localStorage.getItem('tzData') || '{}');
+    return {
+        contentRequirements: tzData.contentRequirements || ''
+    };
 }
 
 // Функция получения данных о магазине
 function getStoreData() {
-    try {
-        const storeData = localStorage.getItem('storeData');
-        return storeData ? JSON.parse(storeData) : null;
-    } catch (e) {
-        console.error('Ошибка при получении данных о магазине:', e);
-        return null;
-    }
+    const storeData = JSON.parse(localStorage.getItem('storeData') || '{}');
+    return {
+        name: storeData.name || '',
+        description: storeData.description || ''
+    };
+}
+
+// Функция получения данных о изображениях товара
+function getImages() {
+    const productData = JSON.parse(localStorage.getItem('productData') || '{}');
+    return productData.allImages || [];
 }
 
 // Функция форматирования названия товара
