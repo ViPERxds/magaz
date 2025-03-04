@@ -143,40 +143,68 @@ document.addEventListener('DOMContentLoaded', function() {
     // Функция для обновления содержимого вкладки
     function updateTabContent(tabId) {
         const content = document.getElementById(tabId + '-content');
-        const orders = getOrders();
+        if (!content) return;
 
         // Очищаем текущее содержимое
         content.innerHTML = '';
 
-        if (orders.length === 0) {
+        // Получаем текущую заявку
+        const currentOrder = getCurrentOrder();
+        console.log('Текущая заявка:', currentOrder);
+
+        if (tabId === 'tab-moderation' && currentOrder) {
+            // Создаем карточку заявки
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                <div class="product-content">
+                    <div class="product-image-left">
+                        <img src="${currentOrder.product?.image || 'assets/tz.jpg'}" alt="Фото товара">
+                    </div>
+                    <div class="price-block">
+                        <div class="price purple">
+                            <div class="price-value">${currentOrder.requirements?.reward || '800'} ₽</div>
+                            <div class="price-label">Выплата</div>
+                        </div>
+                        <div class="price gray">
+                            <div class="price-value">${currentOrder.product?.price || '500'} ₽</div>
+                            <div class="price-label">Цена</div>
+                        </div>
+                    </div>
+                    <div class="payment-row">
+                        <div class="payment-block">
+                            <div class="payment-label">Выплата:</div>
+                            <div class="payment-value">Сразу</div>
+                        </div>
+                        <div class="payment-block">
+                            <div class="payment-label">Доплата:</div>
+                            <div class="payment-value bonus">Нет</div>
+                        </div>
+                    </div>
+                    <div class="social-buttons">
+                        <div class="social-btn">Instagram*</div>
+                        <div class="social-btn">VK</div>
+                    </div>
+                    <div class="requirements-block">
+                        <div class="requirement-item">
+                            <span class="requirement-label">Пул от:</span>
+                            <span class="requirement-value">${currentOrder.requirements?.followers || 'Неважно'}</span>
+                        </div>
+                        <div class="requirement-item">
+                            <span class="requirement-label">Reels от:</span>
+                            <span class="requirement-value">${currentOrder.requirements?.reels || 'Неважно'}</span>
+                        </div>
+                        <div class="requirement-item">
+                            <span class="requirement-label">Stories от:</span>
+                            <span class="requirement-value">${currentOrder.requirements?.stories || 'Неважно'}</span>
+                        </div>
+                    </div>
+                </div>`;
+            content.appendChild(card);
+        } else {
             // Показываем сообщение об отсутствии заявок
             content.innerHTML = getEmptyMessage(tabId);
-            return;
         }
-
-        // Фильтруем заявки по статусу
-        const filteredOrders = orders.filter(order => {
-            switch (tabId) {
-                case 'tab-active':
-                    return order.status === 'active';
-                case 'tab-moderation':
-                    return order.status === 'moderation';
-                case 'tab-hidden':
-                    return order.status === 'hidden';
-                default:
-                    return false;
-            }
-        });
-
-        if (filteredOrders.length === 0) {
-            content.innerHTML = getEmptyMessage(tabId);
-            return;
-        }
-
-        // Отображаем заявки
-        filteredOrders.forEach(order => {
-            content.appendChild(createOrderCard(order));
-        });
     }
 
     // Функция для получения сообщения о пустой вкладке
@@ -205,30 +233,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Функция для создания карточки заявки
-    function createOrderCard(order) {
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.innerHTML = `
-            <div class="product-content">
-                <a href="base.html" class="product-link">
-                    <div class="product-image-left">
-                        <img src="${order.image || 'assets/tz.jpg'}" alt="Фото товара">
-                    </div>
-                </a>
-                <div class="price-block">
-                    <div class="price purple">
-                        <div class="price-value">${order.reward || '800'} ₽</div>
-                        <div class="price-label">Выплата</div>
-                    </div>
-                    <div class="price gray">
-                        <div class="price-value">${order.price || '500'} ₽</div>
-                        <div class="price-label">Цена</div>
-                    </div>
-                </div>
-                <!-- Остальное содержимое карточки -->
-            </div>`;
-        return card;
+    // Функция для получения текущей заявки
+    function getCurrentOrder() {
+        try {
+            const orderData = localStorage.getItem('currentOrder');
+            return orderData ? JSON.parse(orderData) : null;
+        } catch (e) {
+            console.error('Ошибка при получении текущей заявки:', e);
+            return null;
+        }
     }
 
     // Функция для получения заявок из localStorage
@@ -258,26 +271,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Функция для получения данных о товаре из localStorage
     function getProductData() {
-        const productData = localStorage.getItem('productData');
-        return productData ? JSON.parse(productData) : null;
+        try {
+            const data = localStorage.getItem('productData');
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.error('Ошибка при получении данных о товаре:', e);
+            return null;
+        }
     }
 
     // Функция для получения данных о требованиях из localStorage
     function getRequirementsData() {
-        const requirementsData = localStorage.getItem('requirementsData');
-        return requirementsData ? JSON.parse(requirementsData) : null;
+        try {
+            const data = localStorage.getItem('requirementsData');
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.error('Ошибка при получении данных о требованиях:', e);
+            return null;
+        }
     }
 
     // Функция для получения данных о ТЗ из localStorage
     function getTzData() {
-        const tzContent = localStorage.getItem('tzContent');
-        return tzContent || null;
+        try {
+            const data = localStorage.getItem('tzData');
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.error('Ошибка при получении данных о ТЗ:', e);
+            return null;
+        }
     }
 
     // Функция для получения данных о магазине из localStorage
     function getStoreData() {
-        const storeData = localStorage.getItem('storeData');
-        return storeData ? JSON.parse(storeData) : null;
+        try {
+            const data = localStorage.getItem('storeData');
+            return data ? JSON.parse(data) : null;
+        } catch (e) {
+            console.error('Ошибка при получении данных о магазине:', e);
+            return null;
+        }
     }
 
     // Показываем поп-ап уведомление, если нужно
