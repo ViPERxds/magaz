@@ -33,12 +33,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Заполняем изображение товара
     if (productData && productData.allImages && productData.allImages.length > 0) {
         console.log('Найдены изображения товара:', productData.allImages);
-        const img = document.querySelector('img[alt="Фото товара"]');
-        if (img) {
-            img.src = productData.allImages[0];
-            console.log('Установлено изображение товара:', img.src);
+        
+        // Пробуем найти изображение товара разными способами
+        const productImage = document.querySelector('img[alt="Фото товара"]') || 
+                           document.querySelector('.product-image img') ||
+                           document.querySelector('#productImage');
+                           
+        if (productImage) {
+            productImage.src = productData.allImages[0];
+            productImage.style.maxWidth = '100%';
+            productImage.style.height = 'auto';
+            productImage.style.borderRadius = '8px';
+            console.log('Установлено изображение товара:', productImage.src);
         } else {
-            console.error('Не найден элемент изображения товара');
+            // Если изображение не найдено, создаем новое
+            const container = document.querySelector('.product-image') || document.querySelector('.product-info');
+            if (container) {
+                const newImage = document.createElement('img');
+                newImage.src = productData.allImages[0];
+                newImage.alt = 'Фото товара';
+                newImage.style.maxWidth = '100%';
+                newImage.style.height = 'auto';
+                newImage.style.borderRadius = '8px';
+                container.insertBefore(newImage, container.firstChild);
+                console.log('Создано новое изображение товара:', newImage.src);
+            }
         }
     }
 
@@ -76,19 +95,38 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Данные о магазине:', productData);
         
         // Заполняем аватар магазина
-        const storeAvatar = document.querySelector('.shop-avatar img');
-        if (storeAvatar) {
-            if (productData.logoUrl) {
-                console.log('Устанавливаем логотип магазина:', productData.logoUrl);
+        if (productData.logoUrl) {
+            console.log('Найден логотип магазина:', productData.logoUrl);
+            
+            // Пробуем найти аватар магазина разными способами
+            const storeAvatar = document.querySelector('.shop-avatar img') || 
+                              document.querySelector('.store-avatar img') ||
+                              document.querySelector('.shop-logo img');
+                              
+            if (storeAvatar) {
                 storeAvatar.src = productData.logoUrl;
-                storeAvatar.alt = productData.name || 'Аватар магазина';
+                storeAvatar.style.width = '40px';
+                storeAvatar.style.height = '40px';
+                storeAvatar.style.borderRadius = '50%';
+                storeAvatar.style.objectFit = 'cover';
+                console.log('Установлен логотип магазина:', storeAvatar.src);
             } else {
-                console.log('Используем дефолтный логотип магазина');
-                storeAvatar.src = 'images/default-shop-avatar.png';
-                storeAvatar.alt = 'Магазин';
+                // Если аватар не найден, создаем новый
+                const container = document.querySelector('.shop-avatar') || 
+                                document.querySelector('.store-avatar') ||
+                                document.querySelector('.shop-info');
+                if (container) {
+                    const newAvatar = document.createElement('img');
+                    newAvatar.src = productData.logoUrl;
+                    newAvatar.alt = 'Логотип магазина';
+                    newAvatar.style.width = '40px';
+                    newAvatar.style.height = '40px';
+                    newAvatar.style.borderRadius = '50%';
+                    newAvatar.style.objectFit = 'cover';
+                    container.insertBefore(newAvatar, container.firstChild);
+                    console.log('Создан новый логотип магазина:', newAvatar.src);
+                }
             }
-        } else {
-            console.error('Не найден элемент для аватара магазина');
         }
     }
 
@@ -183,17 +221,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // Удаляем ненужные элементы
     const elementsToRemove = [
         '.shop-rating',
+        '.rating',
         '.offers-count',
+        '.offers',
         '.views-stats',
-        '.image-size'
+        '.image-size',
+        '.store-rating',
+        '.rating-count',
+        '.rating-value',
+        '.offers-number'
     ];
 
     elementsToRemove.forEach(selector => {
-        const element = document.querySelector(selector);
-        if (element) {
-            element.remove();
-        }
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+            if (element && element.parentNode) {
+                element.parentNode.removeChild(element);
+                console.log('Удален элемент:', selector);
+            }
+        });
     });
+
+    // Дополнительно ищем и удаляем текст рейтинга и предложений
+    const textNodes = document.evaluate(
+        "//text()[contains(., 'Рейтинг') or contains(., 'предложений') or contains(., '4.9') or contains(., '(40)')]",
+        document,
+        null,
+        XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,
+        null
+    );
+
+    for (let i = 0; i < textNodes.snapshotLength; i++) {
+        const node = textNodes.snapshotItem(i);
+        if (node.parentNode) {
+            node.parentNode.removeChild(node);
+            console.log('Удален текстовый узел с рейтингом/предложениями');
+        }
+    }
 
     // Настраиваем вкладки соцсетей
     setupSocialTabs();
