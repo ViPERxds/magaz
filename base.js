@@ -19,6 +19,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const tzData = getTzData();
             const storeData = getStoreData();
 
+            console.log('Данные перед отправкой:', {
+                product: productData,
+                requirements: requirementsData,
+                tz: tzData,
+                store: storeData
+            });
+
+            if (!productData || !requirementsData || !tzData) {
+                alert('Пожалуйста, заполните все необходимые данные');
+                return;
+            }
+
             // Собираем все данные заявки
             const orderData = {
                 product: productData,
@@ -29,22 +41,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 createdAt: new Date().toISOString()
             };
 
-            // Сохраняем заявку в localStorage
-            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-            orders.push(orderData);
-            localStorage.setItem('orders', JSON.stringify(orders));
+            try {
+                // Сохраняем данные в localStorage
+                localStorage.setItem('currentOrder', JSON.stringify(orderData));
+                
+                // Отправляем данные в бота через Telegram WebApp
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.sendData(JSON.stringify(orderData));
+                }
 
-            // Отправляем данные в бота через Telegram WebApp
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.sendData(JSON.stringify(orderData));
+                // Устанавливаем флаг для показа поп-апа модерации
+                localStorage.setItem('showModerationPopup', 'true');
+                localStorage.setItem('submissionTime', new Date().toISOString());
+
+                // Переходим на страницу заявок
+                window.location.href = 'application.html';
+            } catch (error) {
+                console.error('Ошибка при сохранении данных:', error);
+                alert('Произошла ошибка при сохранении данных');
             }
-
-            // Устанавливаем флаг для показа поп-апа модерации
-            localStorage.setItem('showModerationPopup', 'true');
-            localStorage.setItem('submissionTime', new Date().toISOString());
-
-            // Переходим на страницу заявок
-            window.location.href = 'application.html';
         });
     }
 
