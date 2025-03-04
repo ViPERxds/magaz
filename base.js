@@ -6,63 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
         window.Telegram.WebApp.expand();
     }
 
-    // Получаем все необходимые данные и заполняем страницу
-    loadAndFillData();
-
-    // Обработчик кнопки публикации
-    const publishBtn = document.getElementById('publishBtn');
-    if (publishBtn) {
-        publishBtn.addEventListener('click', function() {
-            // Получаем актуальные данные перед отправкой
-            const productData = getProductData();
-            const requirementsData = getRequirementsData();
-            const tzData = getTzData();
-            const storeData = getStoreData();
-
-            console.log('Данные перед отправкой:', {
-                product: productData,
-                requirements: requirementsData,
-                tz: tzData,
-                store: storeData
-            });
-
-            if (!productData || !requirementsData || !tzData) {
-                alert('Пожалуйста, заполните все необходимые данные');
-                return;
-            }
-
-            // Собираем все данные заявки
-            const orderData = {
-                product: productData,
-                requirements: requirementsData,
-                tz: tzData,
-                store: storeData,
-                status: 'moderation',
-                createdAt: new Date().toISOString()
-            };
-
-            try {
-                // Сохраняем данные в localStorage
-                localStorage.setItem('currentOrder', JSON.stringify(orderData));
-                
-                // Отправляем данные в бота через Telegram WebApp
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.sendData(JSON.stringify(orderData));
-                }
-
-                // Устанавливаем флаг для показа поп-апа модерации
-                localStorage.setItem('showModerationPopup', 'true');
-                localStorage.setItem('submissionTime', new Date().toISOString());
-
-                // Переходим на страницу заявок
-                window.location.href = 'application.html';
-            } catch (error) {
-                console.error('Ошибка при сохранении данных:', error);
-                alert('Произошла ошибка при сохранении данных');
-            }
-        });
-    }
-
     // Получаем данные из localStorage (сохраненные на предыдущих страницах)
     const productData = getProductData();
     const requirementsData = getRequirementsData();
@@ -242,27 +185,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Настраиваем вкладки соцсетей
     setupSocialTabs();
 
+    // Обработчик для кнопки "Опубликовать"
+    const publishBtn = document.querySelector('.publish-btn');
+    if (publishBtn) {
+        publishBtn.addEventListener('click', function(e) {
+            // Сохраняем флаг для показа уведомления
+            localStorage.setItem('showModerationPopup', 'true');
+            // Сохраняем время отправки
+            localStorage.setItem('submissionTime', new Date().toISOString());
+        });
+    }
+
     // Обработчик для кнопки "Редактировать"
     const editBtn = document.querySelector('.edit-btn');
     if (editBtn) {
         editBtn.addEventListener('click', function() {
-            window.history.back();
+            window.location.href = 'add-request.html';
         });
     }
 });
-
-// Функция для загрузки и заполнения данных на странице
-function loadAndFillData() {
-    const productData = getProductData();
-    const requirementsData = getRequirementsData();
-    const tzData = getTzData();
-    const storeData = getStoreData();
-
-    if (productData) fillProductData(productData);
-    if (requirementsData) fillRequirementsData(requirementsData);
-    if (tzData) fillTzData(tzData);
-    if (storeData) fillStoreData(storeData);
-}
 
 // Функция получения данных о товаре
 function getProductData() {
