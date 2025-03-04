@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         name: productData.name || '',
                         price: productData.price || '',
                         link: productData.link || '',
-                        images: productData.allImages || []
+                        images: productData.images || [] // Используем images вместо allImages
                     },
                     requirements: {
                         rewardPrice: requirementsData.rewardPrice || '',
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tz: tzData,
                     store: {
                         name: storeData.name || '',
-                        logo: storeData.logo || '',
+                        logo: storeData.logo || storeData.logoUrl || '', // Поддерживаем оба варианта
                         description: storeData.description || ''
                     }
                 };
@@ -315,9 +315,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 console.log('Отправляемые данные:', requestData);
 
-                // Отправляем данные
-                window.Telegram.WebApp.sendData(JSON.stringify(requestData));
-                console.log('Данные успешно отправлены');
+                // Отправляем данные через Telegram WebApp
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.sendData(JSON.stringify(requestData));
+                    console.log('Данные успешно отправлены через WebApp');
+                } else {
+                    throw new Error('Telegram WebApp не доступен');
+                }
 
             } catch (error) {
                 console.error('Ошибка при отправке данных:', error);
@@ -332,28 +336,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Заполняем название магазина
     const storeName = document.querySelector('.shop-name, .store-name');
-    if (storeName && storeData.name) {
-        storeName.textContent = storeData.name;
-        console.log('Установлено название магазина:', storeData.name);
+    if (storeName && (storeData.name || storeData.storeName)) {
+        storeName.textContent = storeData.name || storeData.storeName;
+        console.log('Установлено название магазина:', storeName.textContent);
     }
 
     // Заполняем логотип магазина
-    if (storeData.logo) {
-        console.log('Найден логотип магазина:', storeData.logo);
+    const logoUrl = storeData.logo || storeData.logoUrl;
+    if (logoUrl) {
+        console.log('Найден логотип магазина:', logoUrl);
         
-        const storeAvatar = document.querySelector('.shop-avatar img, .store-avatar img');
+        const storeAvatar = document.querySelector('.shop-avatar img, .store-avatar img, .shop-logo img');
         if (storeAvatar) {
-            storeAvatar.src = storeData.logo;
+            storeAvatar.src = logoUrl;
             storeAvatar.style.width = '40px';
             storeAvatar.style.height = '40px';
             storeAvatar.style.borderRadius = '50%';
             storeAvatar.style.objectFit = 'cover';
             console.log('Установлен логотип магазина:', storeAvatar.src);
         } else {
-            const container = document.querySelector('.shop-avatar, .store-avatar, .shop-info');
+            const container = document.querySelector('.shop-avatar, .store-avatar, .shop-info, .shop-logo');
             if (container) {
                 const newAvatar = document.createElement('img');
-                newAvatar.src = storeData.logo;
+                newAvatar.src = logoUrl;
                 newAvatar.alt = 'Логотип магазина';
                 newAvatar.style.width = '40px';
                 newAvatar.style.height = '40px';
