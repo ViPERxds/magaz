@@ -4,12 +4,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.Telegram && window.Telegram.WebApp) {
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
-
+        
         // Настраиваем тему и цвета
         document.documentElement.style.setProperty('--tg-theme-bg-color', window.Telegram.WebApp.backgroundColor);
         document.documentElement.style.setProperty('--tg-theme-text-color', window.Telegram.WebApp.textColor);
         document.documentElement.style.setProperty('--tg-theme-button-color', window.Telegram.WebApp.buttonColor);
         document.documentElement.style.setProperty('--tg-theme-button-text-color', window.Telegram.WebApp.buttonTextColor);
+
+        // Скрываем MainButton если он показан
+        if (window.Telegram.WebApp.MainButton.isVisible) {
+            window.Telegram.WebApp.MainButton.hide();
+        }
 
         console.log('Telegram WebApp успешно инициализирован');
     } else {
@@ -32,17 +37,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Заполняем изображения товара
-    if (productData) {
-        const productImage = document.getElementById('productImage');
-        if (productImage && productData.allImages && productData.allImages.length > 0) {
+    if (productData && productData.allImages && productData.allImages.length > 0) {
+        console.log('Найдены изображения товара:', productData.allImages);
+        
+        // Находим контейнер для изображения товара
+        const productImageContainer = document.querySelector('.product-image');
+        if (productImageContainer) {
+            // Создаем элемент изображения если его нет
+            let productImage = document.getElementById('productImage');
+            if (!productImage) {
+                productImage = document.createElement('img');
+                productImage.id = 'productImage';
+                productImageContainer.appendChild(productImage);
+            }
+            
+            // Устанавливаем изображение
             productImage.src = productData.allImages[0];
             productImage.alt = productData.name || 'Товар';
-            
-            // Если есть дополнительные изображения, создаем галерею
-            if (productData.allImages.length > 1) {
-                createImageGallery(productData.allImages);
-            }
+            console.log('Установлено изображение товара:', productImage.src);
+        } else {
+            console.error('Не найден контейнер для изображения товара');
         }
+    } else {
+        console.log('Изображения товара не найдены в данных');
     }
 
     // Заполняем цены
@@ -76,10 +93,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Заполняем данные о магазине
     if (storeData) {
-        console.log('Заполняем данные о магазине:', storeData.name, storeData.logoUrl);
-        fillStoreData(storeData);
-    } else {
-        console.log('Данные о магазине отсутствуют в localStorage');
+        console.log('Данные о магазине:', storeData);
+        
+        // Заполняем аватар магазина
+        const storeAvatar = document.querySelector('.shop-avatar img');
+        if (storeAvatar) {
+            if (storeData.logoUrl) {
+                console.log('Устанавливаем логотип магазина:', storeData.logoUrl);
+                storeAvatar.src = storeData.logoUrl;
+                storeAvatar.alt = storeData.name || 'Аватар магазина';
+            } else {
+                console.log('Используем дефолтный логотип магазина');
+                storeAvatar.src = 'images/default-shop-avatar.png';
+                storeAvatar.alt = 'Магазин';
+            }
+        } else {
+            console.error('Не найден элемент для аватара магазина');
+        }
     }
 
     // Заполняем требования к соцсетям
@@ -204,10 +234,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Настраиваем вкладки соцсетей
     setupSocialTabs();
 
-    // Обработчик для кнопки "Опубликовать"
-    const publishBtn = document.querySelector('.publish-btn');
-    if (publishBtn) {
-        publishBtn.addEventListener('click', function(e) {
+    // Обработчик для кнопки "Отправить заявку"
+    const submitBtn = document.querySelector('.submit-btn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
             try {
@@ -219,8 +249,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     images: getImages()
                 };
 
-                console.log('Отправка данных:', requestData);
+                console.log('Отправка данных в бота:', requestData);
                 window.Telegram.WebApp.sendData(JSON.stringify(requestData));
+                window.Telegram.WebApp.close();
 
             } catch (error) {
                 console.error('Ошибка при отправке данных:', error);
@@ -497,13 +528,16 @@ function fillStoreData(storeData) {
     const storeAvatar = document.querySelector('.shop-avatar img');
     if (storeAvatar) {
         if (storeData.logoUrl) {
+            console.log('Устанавливаем логотип магазина:', storeData.logoUrl);
             storeAvatar.src = storeData.logoUrl;
             storeAvatar.alt = storeData.name || 'Аватар магазина';
         } else {
-            // Если нет логотипа, используем дефолтное изображение
+            console.log('Используем дефолтный логотип магазина');
             storeAvatar.src = 'images/default-shop-avatar.png';
             storeAvatar.alt = 'Магазин';
         }
+    } else {
+        console.error('Не найден элемент для аватара магазина');
     }
     
     // Убираем отзывы - оставляем только название магазина
