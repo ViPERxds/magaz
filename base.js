@@ -275,13 +275,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 const tzData = localStorage.getItem('tzContent') || '';
                 const storeData = JSON.parse(localStorage.getItem('storeData') || '{}');
 
-                // Формируем оптимизированный объект для отправки
+                // Формируем объект для отправки только с текстовыми данными
                 const requestData = {
                     p: { // product
                         n: productData.name || '', // name
                         p: productData.price || '', // price
-                        l: productData.link || '', // link
-                        i: productData.images ? productData.images.slice(0, 3) : [] // только первые 3 изображения
+                        l: productData.link || '' // link
                     },
                     r: { // requirements
                         rp: requirementsData.rewardPrice || '', // rewardPrice
@@ -293,11 +292,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         ba: requirementsData.bonusAmount || '', // bonusAmount
                         bc: requirementsData.bonusCondition || '' // bonusCondition
                     },
-                    t: tzData.substring(0, 1000), // Ограничиваем длину ТЗ
+                    t: tzData.substring(0, 500), // Ограничиваем длину ТЗ
                     s: { // store
                         n: storeData.name || '', // name
-                        l: storeData.logo || storeData.logoUrl || '', // logo
-                        d: storeData.description ? storeData.description.substring(0, 200) : '' // description
+                        d: storeData.description ? storeData.description.substring(0, 100) : '' // description
                     }
                 };
 
@@ -308,10 +306,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Преобразуем в JSON и проверяем размер
                 const jsonData = JSON.stringify(requestData);
-                if (jsonData.length > 4096) {
-                    throw new Error('Данные слишком большие для отправки. Пожалуйста, уменьшите количество или размер изображений.');
-                }
-
                 console.log('Отправляемые данные:', requestData);
                 console.log('Размер данных:', jsonData.length, 'байт');
 
