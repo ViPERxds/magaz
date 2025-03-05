@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Получение кода доступа</title>
+    <title>Добавить заявку</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-    <div class="access-page">
+    <div class="app-container">
         <!-- Верхняя панель -->
         <header class="header">
             <div class="logo-container">
@@ -40,35 +40,88 @@
             </div>
         </header>
 
-        <!-- Контент страницы -->
-        <div class="access-content">
-            <h1><span>Добавить</span> <span class="black-text">заявку на<br>поиск блогера</span></h1>
-            <div class="stats">
-                <span>Скидка 0%</span>
+        <!-- Основной контент -->
+        <div class="add-request-content">
+            <h1><span class="purple-text">Добавить</span> заявку на поиск блогера</h1>
+            
+            <div class="request-stats">
+                <span>Скидка 10%</span>
                 <span>Размещений: 0</span>
             </div>
 
-            <div class="manager-card">
-                <img src="assets/men.png" alt="Менеджер" class="manager-photo">
-                <a href="https://wikipedia.org" class="write-manager-btn">Написать менеджеру</a>
+            <div class="request-tabs">
+                <div class="progress-steps">
+                    <button class="step-btn active">Товар</button>
+                    <button class="step-btn">Требования</button>
+                    <button class="step-btn">ТЗ</button>
+                    <button class="step-btn">Готово</button>
+                </div>
+                <div class="progress-line">
+                    <div class="progress-fill"></div>
+                </div>
             </div>
 
-            <div class="code-input-section">
-                <label>Ваш код</label>
-                <input type="text">
-            </div>
+            <form class="request-form">
+                <div class="form-group">
+                    <label>Название товара</label>
+                    <input type="text" placeholder="">
+                </div>
 
-            <button class="get-access-btn">Получить доступ</button>
+                <div class="form-group">
+                    <label>Маркетплейс</label>
+                    <div class="marketplace-options">
+                        <button type="button" class="marketplace-btn">Wildberries</button>
+                        <button type="button" class="marketplace-btn">OZON</button>
+                    </div>
+                    <span class="hint">*Можно выбрать несколько</span>
+                </div>
 
-            <div class="additional-links">
-                <button class="blogger-btn">Хочу быть блогером</button>
-                <button class="help-btn">Есть вопрос? Нужна помощь?</button>
-                <button class="idea-btn">Предложить идею</button>
-                <button class="cooperation-btn">Сотрудничество</button>
-            </div>
+                <div class="form-group">
+                    <label>Цена товара</label>
+                    <input type="text" placeholder="">
+                </div>
+
+                <div class="form-group">
+                    <label>Ссылка на товар</label>
+                    <input type="url" placeholder="">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="hideFromBloggers">
+                        <label for="hideFromBloggers" class="checkbox-label">Не показывать блогерам</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Категория товара</label>
+                    <select>
+                        <option value="">Выбрать</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Фото товара</label>
+                    <div class="upload-container">
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                        <button type="button" class="upload-btn" id="uploadBtn">
+                            <img src="assets/zagruzka.png" alt="Загрузить">
+                            <span>Кликните или перетащите<br>сюда фото, чтобы загрузить</span>
+                            <span class="file-size">До 10 шт</span>
+                        </button>
+                        <div id="imagePreview" class="image-preview"></div>
+                    </div>
+                </div>
+
+                <button type="button" class="submit-btn" onclick="window.location.href='requirements.html'">Добавить требования</button>
+
+                <!-- Добавляем дополнительные кнопки -->
+                <div class="additional-buttons">
+                    <button type="button" class="blogger-btn">Хочу быть блогером</button>
+                    <button type="button" class="help-btn">Есть вопрос? Нужна помощь?</button>
+                    <button type="button" class="idea-btn">Предложить идею</button>
+                    <button type="button" class="cooperation-btn">Сотрудничество</button>
+                </div>
+            </form>
         </div>
     </div>
-
-    <script src="access.js"></script>
+    <script src="add-request.js"></script>
 </body>
 </html> 
