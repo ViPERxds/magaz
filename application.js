@@ -120,169 +120,76 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Получаем элементы табов
+    // Получение элементов вкладок и их содержимого
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
-    const activeOrdersContainer = document.getElementById('activeOrders');
 
-    // Функция для создания карточки активного заказа
-    function createOrderCard(order) {
-        const data = order.data;
-        const product = data.p || {};
-        const requirements = data.r || {};
-
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.innerHTML = `
-            <div class="product-content">
-                <div class="product-image-left">
-                    <img src="${product.i ? product.i[0] : 'assets/tz.jpg'}" alt="Фото товара" onerror="this.src='assets/tz.jpg'">
-                </div>
-                
-                <div class="price-block">
-                    <div class="price purple">
-                        <div class="price-value">${requirements.rp || '0'} ₽</div>
-                        <div class="price-label">Выплата</div>
-                    </div>
-                    <div class="price gray">
-                        <div class="price-value">${product.p || '0'} ₽</div>
-                        <div class="price-label">Цена</div>
-                    </div>
-                </div>
-                
-                <div class="payment-row">
-                    <div class="payment-block">
-                        <div class="payment-label">Выплата:</div>
-                        <div class="payment-value">${requirements.pt || 'Не указано'}</div>
-                    </div>
-                    <div class="payment-block">
-                        <div class="payment-label">Доплата:</div>
-                        <div class="payment-value bonus">${requirements.ba ? requirements.ba + ' ₽' : 'Нет'}</div>
-                    </div>
-                </div>
-                
-                <div class="social-buttons">
-                    ${renderSocialButtons(requirements.sr || {})}
-                </div>
-                
-                <div class="requirements-block">
-                    ${renderRequirements(requirements.sr || {})}
-                </div>
-            </div>
-        `;
-
-        return card;
-    }
-
-    // Функция для отрисовки социальных кнопок
-    function renderSocialButtons(socialRequirements) {
-        let buttons = '';
-        for (const [platform, reqs] of Object.entries(socialRequirements)) {
-            if (Object.values(reqs).some(v => v)) {
-                buttons += `<div class="social-btn">${platform}</div>`;
-            }
+    // Функция переключения вкладок
+    function switchTab(tabId) {
+        // Удаляем активный класс у всех вкладок и их содержимого
+        tabs.forEach(tab => tab.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Добавляем активный класс выбранной вкладке
+        const selectedTab = document.getElementById(tabId);
+        if (selectedTab) {
+            selectedTab.classList.add('active');
         }
-        return buttons || '<div class="social-btn">Не указано</div>';
-    }
-
-    // Функция для отрисовки требований
-    function renderRequirements(socialRequirements) {
-        let requirements = '';
-        for (const [platform, reqs] of Object.entries(socialRequirements)) {
-            for (const [key, value] of Object.entries(reqs)) {
-                if (value) {
-                    const label = {
-                        'followers': 'Подписчики от',
-                        'reels': 'Reels от',
-                        'stories': 'Stories от'
-                    }[key] || key;
-                    
-                    requirements += `
-                        <div class="requirement-item">
-                            <span class="requirement-label">${label}:</span>
-                            <span class="requirement-value">${value}</span>
-                        </div>
-                    `;
-                }
-            }
+        
+        // Добавляем активный класс соответствующему содержимому
+        const selectedContent = document.getElementById(tabId + '-content');
+        if (selectedContent) {
+            selectedContent.classList.add('active');
         }
-        return requirements || `
-            <div class="requirement-item">
-                <span class="requirement-label">Требования:</span>
-                <span class="requirement-value">Не указаны</span>
-            </div>
-        `;
+        
+        // Сохраняем активную вкладку в localStorage
+        localStorage.setItem('activeTab', tabId);
     }
 
-    // Функция для загрузки активных заказов
-    async function loadActiveOrders() {
-        try {
-            const userId = window.Telegram.WebApp.initDataUnsafe.user.id;
-            console.log('Загрузка активных заказов для пользователя:', userId);
-            
-            const response = await fetch(`/api/orders?user_id=${userId}&status=active`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const orders = await response.json();
-            console.log('Получены активные заказы:', orders);
-
-            const activeOrdersContainer = document.getElementById('activeOrders');
-            activeOrdersContainer.innerHTML = '';
-
-            if (!orders || orders.length === 0) {
-                activeOrdersContainer.innerHTML = `
-                    <div class="active-info no-data-message">
-                        <h3>У вас нет активных заявок</h3>
-                        <p>Здесь будут отображаться ваши активные заявки после прохождения модерации</p>
-                    </div>
-                `;
-                return;
-            }
-
-            orders.forEach(order => {
-                const card = createOrderCard(order);
-                activeOrdersContainer.appendChild(card);
-            });
-
-        } catch (error) {
-            console.error('Ошибка при загрузке активных заказов:', error);
-            const activeOrdersContainer = document.getElementById('activeOrders');
-            activeOrdersContainer.innerHTML = `
-                <div class="error-message">
-                    <h3>Произошла ошибка при загрузке заказов</h3>
-                    <p>Пожалуйста, попробуйте позже</p>
-                </div>
-            `;
-        }
-    }
-
-    // Обработчик переключения табов
+    // Обработчики событий для вкладок
     tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Убираем активный класс у всех табов и контента
-            tabs.forEach(t => t.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
-
-            // Добавляем активный класс текущему табу
-            this.classList.add('active');
-
-            // Показываем соответствующий контент
-            const contentId = this.id + '-content';
-            document.getElementById(contentId).classList.add('active');
-
-            // Если выбрана вкладка "Активные", загружаем активные заказы
-            if (this.id === 'tab-active') {
-                loadActiveOrders();
-            }
+        tab.addEventListener('click', () => {
+            switchTab(tab.id);
         });
     });
 
-    // Загружаем активные заказы при первой загрузке страницы
-    if (document.getElementById('tab-active').classList.contains('active')) {
-        loadActiveOrders();
+    // Проверяем, есть ли сохраненная активная вкладка
+    const savedTab = localStorage.getItem('activeTab');
+    if (savedTab) {
+        switchTab(savedTab);
+    } else {
+        // По умолчанию открываем вкладку "Модерации"
+        switchTab('tab-moderation');
     }
+
+    // Функция обновления статуса заявок
+    function updateApplicationsStatus() {
+        // Получаем данные о заявках из localStorage или другого источника
+        const applications = JSON.parse(localStorage.getItem('applications')) || [];
+        
+        // Проверяем наличие активных заявок
+        const activeApps = applications.filter(app => app.status === 'active');
+        const activeContent = document.getElementById('tab-active-content');
+        if (activeApps.length > 0) {
+            activeContent.classList.add('has-data');
+            // Здесь можно добавить код для отображения активных заявок
+        } else {
+            activeContent.classList.remove('has-data');
+        }
+        
+        // Проверяем наличие скрытых заявок
+        const hiddenApps = applications.filter(app => app.status === 'hidden');
+        const hiddenContent = document.getElementById('tab-hidden-content');
+        if (hiddenApps.length > 0) {
+            hiddenContent.classList.add('has-data');
+            // Здесь можно добавить код для отображения скрытых заявок
+        } else {
+            hiddenContent.classList.remove('has-data');
+        }
+    }
+
+    // Вызываем функцию обновления статуса при загрузке страницы
+    updateApplicationsStatus();
 
     // Функция для получения данных о товаре из localStorage
     function getProductData() {
