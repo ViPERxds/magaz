@@ -25,70 +25,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const productData = JSON.parse(localStorage.getItem('productData') || '{}');
     console.log('Загруженные данные о товаре:', productData);
 
-    // Заполняем название товара
-    if (productData && productData.name) {
-        document.getElementById('productName').innerHTML = formatProductName(productData.name);
-    }
+    // Заполняем данные на странице
+    fillPageData(productData);
 
-    // Заполняем изображение товара
-    if (productData && productData.allImages && productData.allImages.length > 0) {
-        console.log('Найдены изображения товара:', productData.allImages);
-        
-        // Пробуем найти изображение товара разными способами
-        const productImage = document.querySelector('img[alt="Фото товара"]') || 
-                           document.querySelector('.product-image img') ||
-                           document.querySelector('#productImage');
-                           
-        if (productImage) {
-            productImage.src = productData.allImages[0];
-            productImage.style.maxWidth = '100%';
-            productImage.style.height = 'auto';
-            productImage.style.borderRadius = '8px';
-            console.log('Установлено изображение товара:', productImage.src);
-        } else {
-            // Если изображение не найдено, создаем новое
-            const container = document.querySelector('.product-image') || document.querySelector('.product-info');
-            if (container) {
-                const newImage = document.createElement('img');
-                newImage.src = productData.allImages[0];
-                newImage.alt = 'Фото товара';
-                newImage.style.maxWidth = '100%';
-                newImage.style.height = 'auto';
-                newImage.style.borderRadius = '8px';
-                container.insertBefore(newImage, container.firstChild);
-                console.log('Создано новое изображение товара:', newImage.src);
-            }
-        }
-    }
-
-    // Заполняем цены
-    if (productData) {
-        if (productData.price) {
-            document.getElementById('productPrice').textContent = productData.price + ' ₽';
-            // Устанавливаем более светлый оттенок серого для цены
-            document.getElementById('productPrice').style.color = '#777777';
-        }
-        if (productData.reward) {
-            document.getElementById('rewardPrice').textContent = productData.reward + ' ₽';
-        }
-    }
-
-    // Заполняем информацию о доплате
-    const bonusDetails = document.getElementById('bonusDetails');
-    const bonusCondition = document.querySelector('.bonus-condition');
-    
-    if (bonusDetails && bonusCondition) {
-        // Проверяем, есть ли данные о доплате
-        if (productData && productData.requirements && productData.requirements.bonusAmount && productData.requirements.bonusCondition) {
-            bonusDetails.innerHTML = '<span class="condition-label">Доплата</span>' + 
-                productData.requirements.bonusAmount + '₽, при условии: ' + productData.requirements.bonusCondition;
-        } else {
-            // Если выбрано "Нет" для доплаты, показываем "Нет"
-            bonusDetails.innerHTML = '<span class="condition-label">Доплата</span>Нет';
-        }
-        // Всегда показываем блок
-        bonusCondition.style.display = 'block';
-    }
+    // Настройка обработчиков событий
+    setupEventHandlers();
 
     // Заполняем данные о магазине
     if (productData) {
@@ -369,6 +310,59 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editBtn) {
         editBtn.addEventListener('click', function() {
             window.location.href = 'add-request.html';
+        });
+    }
+
+    // Получаем данные заявки из localStorage
+    const applicationData = JSON.parse(localStorage.getItem('applicationData') || '{}');
+    
+    // Заполняем предпросмотр данными
+    if (applicationData.productName) {
+        document.getElementById('productName').textContent = applicationData.productName;
+    }
+    if (applicationData.productImage) {
+        document.getElementById('productImage').src = applicationData.productImage;
+    }
+    if (applicationData.price) {
+        document.getElementById('productPrice').textContent = applicationData.price + ' ₽';
+    }
+    if (applicationData.reward) {
+        document.getElementById('rewardPrice').textContent = applicationData.reward + ' ₽';
+    }
+
+    // Обработчик нажатия на кнопку "Опубликовать"
+    const publishBtn = document.querySelector('.publish-btn');
+    if (publishBtn) {
+        publishBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Добавляем уникальный идентификатор для заявки
+            applicationData.id = Date.now().toString();
+            
+            try {
+                // Показываем индикатор загрузки
+                publishBtn.disabled = true;
+                publishBtn.textContent = 'Публикация...';
+
+                // Отправляем заявку в канал модерации
+                const result = await publishApplication(applicationData);
+
+                if (result.success) {
+                    // Очищаем данные заявки
+                    localStorage.removeItem('applicationData');
+                    
+                    // Перенаправляем на страницу заявок
+                    window.location.href = 'application.html';
+                } else {
+                    alert('Произошла ошибка при публикации заявки. Попробуйте позже.');
+                }
+            } catch (error) {
+                console.error('Ошибка при публикации:', error);
+                alert('Произошла ошибка при публикации заявки. Попробуйте позже.');
+            } finally {
+                publishBtn.disabled = false;
+                publishBtn.textContent = 'Опубликовать';
+            }
         });
     }
 });
@@ -653,5 +647,100 @@ function fillStoreData(storeData) {
     const offersCount = document.querySelector('.offers-count');
     if (offersCount) {
         offersCount.style.display = 'none';
+    }
+}
+
+// Функция заполнения данных на странице
+function fillPageData(data) {
+    if (!data) return;
+
+    // Заполняем название товара
+    const productName = document.getElementById('productName');
+    if (productName && data.name) {
+        productName.textContent = data.name;
+    }
+
+    // Заполняем изображение товара
+    const productImage = document.getElementById('productImage');
+    if (productImage && data.allImages && data.allImages.length > 0) {
+        productImage.src = data.allImages[0];
+    }
+
+    // Заполняем цены
+    const productPrice = document.getElementById('productPrice');
+    const rewardPrice = document.getElementById('rewardPrice');
+    
+    if (productPrice && data.price) {
+        productPrice.textContent = data.price + ' ₽';
+    }
+    if (rewardPrice && data.reward) {
+        rewardPrice.textContent = data.reward + ' ₽';
+    }
+
+    // Заполняем условия
+    fillConditions(data.requirements || {});
+}
+
+// Функция заполнения условий
+function fillConditions(requirements) {
+    const conditions = {
+        'keyPurchase': 'Выкуп по ключу',
+        'returnPolicy': 'Возврат',
+        'reviewType': 'Отзыв',
+        'paymentType': 'Выплата'
+    };
+
+    for (const [id, label] of Object.entries(conditions)) {
+        const element = document.getElementById(id);
+        if (element && requirements[id]) {
+            element.textContent = requirements[id];
+        }
+    }
+
+    // Заполняем информацию о доплате
+    const bonusDetails = document.getElementById('bonusDetails');
+    if (bonusDetails) {
+        if (requirements.bonusAmount && requirements.bonusCondition) {
+            bonusDetails.innerHTML = `<span class="condition-label">Доплата</span>${requirements.bonusAmount}₽, при условии: ${requirements.bonusCondition}`;
+        } else {
+            bonusDetails.innerHTML = '<span class="condition-label">Доплата</span>Нет';
+        }
+    }
+}
+
+// Настройка обработчиков событий
+function setupEventHandlers() {
+    // Обработчик для ТЗ
+    const tzBlock = document.querySelector('.tz-block');
+    const tzPopup = document.getElementById('tzPopup');
+    const closePopup = document.querySelector('.close-popup');
+
+    if (tzBlock && tzPopup) {
+        tzBlock.addEventListener('click', () => {
+            tzPopup.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    if (closePopup && tzPopup) {
+        closePopup.addEventListener('click', () => {
+            tzPopup.style.display = 'none';
+            document.body.style.overflow = '';
+        });
+
+        tzPopup.addEventListener('click', (event) => {
+            if (event.target === tzPopup) {
+                tzPopup.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+        });
+    }
+
+    // Обработчики для кнопок действий
+    const editBtn = document.querySelector('.edit-btn');
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            window.history.back();
+        });
     }
 } 
