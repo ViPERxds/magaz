@@ -48,23 +48,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Обработка кнопок Да/Нет
+    // Улучшенная обработка кнопок Да/Нет
     const optionButtons = document.querySelectorAll('.option-btn');
     optionButtons.forEach(button => {
         button.addEventListener('click', function() {
+            // Находим родительский блок с кнопками
             const buttonGroup = this.closest('.option-buttons');
+            // Убираем активный класс у всех кнопок в группе
             buttonGroup.querySelectorAll('.option-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
+            // Добавляем активный класс нажатой кнопке
             this.classList.add('active');
 
-            // Если выбрано "Да" для доплаты, показываем поля условий
-            if (this.dataset.value === 'yes' && 
-                this.closest('.reward-option').querySelector('h3').textContent.includes('Доплата')) {
-                document.querySelector('.condition-fields').style.display = 'block';
-            } else if (this.dataset.value === 'no' && 
-                      this.closest('.reward-option').querySelector('h3').textContent.includes('Доплата')) {
-                document.querySelector('.condition-fields').style.display = 'none';
+            // Специальная обработка для доплаты
+            const rewardOption = this.closest('.reward-option');
+            if (rewardOption && rewardOption.querySelector('h3').textContent.includes('Доплата')) {
+                const conditionFields = document.querySelector('.condition-fields');
+                if (this.dataset.value === 'yes') {
+                    conditionFields.style.display = 'block';
+                } else {
+                    conditionFields.style.display = 'none';
+                    // Очищаем поля при выборе "Нет"
+                    conditionFields.querySelectorAll('.condition-input').forEach(input => {
+                        input.value = '';
+                    });
+                }
             }
         });
     });
